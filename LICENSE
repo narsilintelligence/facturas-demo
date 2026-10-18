@@ -1,0 +1,102 @@
+LICENCIA DE USO GRATUITO DEL KIT FACTURAS DEMO
+NARSIL Facturas Demo — Free Use License
+Versión 1.0 · octubre de 2026
+
+Facturas demo (en adelante, «el Kit») es un proyecto didáctico de NARSIL Intelligence que
+acompaña al vídeo «Roadmap para aprender IA». Comprende el código fuente, las facturas de
+ejemplo, la tabla de respuestas correctas, las plantillas y guías de la carpeta kit, la
+documentación y los recursos gráficos que acompañan a este texto.
+
+Titular de los derechos: NARSIL Intelligence (en adelante, «el Titular»).
+© 2026 NARSIL Intelligence. Todos los derechos reservados.
+
+Este texto en castellano es el único jurídicamente vinculante. Al final se incluye un resumen
+en inglés únicamente a título informativo.
+
+─────────────────────────────────────────────────────────────────────────────
+
+1. OBJETO
+
+   El Titular concede a quien acepte esta licencia (en adelante, «el Usuario») un derecho
+   gratuito, no exclusivo, intransferible y revocable de USO del Kit con fines de
+   aprendizaje, en los términos que siguen. Todo derecho que no se conceda de forma expresa
+   queda reservado al Titular.
+
+2. LO QUE EL USUARIO PUEDE HACER
+
+   a) Descargar, instalar y ejecutar el Kit, sin coste, en cuantos equipos necesite.
+   b) Leer, estudiar y MODIFICAR el código y las plantillas para aprender, hacer pruebas y
+      adaptarlos a sus propios datos, de forma personal o dentro de su organización.
+   c) Usar las ideas, las técnicas y los patrones que el Kit enseña para construir sus
+      propios proyectos, escribiendo su propio código.
+   d) Mostrar públicamente lo que ha aprendido o construido con el Kit (por ejemplo, en
+      comentarios, redes o presentaciones), citando su procedencia: «Kit Facturas demo de
+      NARSIL Intelligence».
+
+3. LO QUE EL USUARIO NO PUEDE HACER
+
+   Salvo autorización previa, expresa y por escrito del Titular, el Usuario no podrá:
+
+   a) Vender, alquilar, sublicenciar, ceder ni comercializar el Kit o versiones modificadas
+      de él, ni cobrar por formación, cursos, soporte o servicios basados en su contenido.
+   b) Redistribuir el Kit, o versiones modificadas de él, fuera del repositorio oficial del
+      Titular. Para compartirlo, se comparte el enlace al repositorio oficial.
+   c) Integrar el Kit, o partes sustanciales de su código, en productos o servicios que se
+      ofrezcan a terceros.
+   d) Suprimir, alterar u ocultar los avisos de titularidad, de marca o de licencia, ni
+      presentar el Kit como propio.
+   e) Utilizar las marcas, nombres o logotipos de NARSIL o de NARSIL Intelligence para
+      fines distintos de identificar el Kit.
+
+4. DATOS FICTICIOS Y USO CONFORME A DERECHO
+
+   Las facturas, proveedores, identificadores fiscales, direcciones e importes del Kit son
+   ficticios. Si el Usuario lo adapta a datos reales, es el único responsable de tratarlos
+   conforme a la legislación aplicable, en particular la de protección de datos.
+
+5. FINALIDAD DIDÁCTICA
+
+   El Kit es un ejemplo para aprender. No es un producto ni un servicio de NARSIL
+   Intelligence, no está pensado para uso en producción y no sustituye a la revisión de una
+   persona en decisiones contables, fiscales o de pago.
+
+6. COMPONENTES DE TERCEROS
+
+   El Kit se apoya en componentes de terceros que conservan sus licencias propias, entre
+   ellos Python, fpdf2, Pillow, Requests, poppler y Ollama, así como los modelos de lenguaje
+   que el Usuario descargue, cada uno con su licencia. Nada en esta licencia limita los
+   derechos que esas licencias otorgan sobre esos componentes.
+
+7. SIN GARANTÍA
+
+   El Kit se entrega «TAL CUAL», sin garantía de ningún tipo, expresa o implícita, en
+   particular sin garantía de comerciabilidad, de idoneidad para un fin determinado o de
+   ausencia de errores. El Titular no responderá de ningún daño, directo o indirecto,
+   derivado del uso o de la imposibilidad de uso del Kit, en la máxima medida que permita
+   la ley.
+
+8. DURACIÓN Y RESOLUCIÓN
+
+   Esta licencia rige mientras el Usuario la respete. Cualquier incumplimiento la resuelve
+   de forma automática, y el Usuario deberá cesar en el uso y destruir todas las copias.
+   El Titular podrá dejar de distribuir el Kit o modificar esta licencia para versiones
+   futuras; las versiones ya obtenidas conservan la licencia con la que se obtuvieron.
+
+9. LEY APLICABLE
+
+   Esta licencia se rige por la legislación española. Para cualquier controversia, las
+   partes se someten a los juzgados y tribunales competentes conforme a esa legislación.
+
+─────────────────────────────────────────────────────────────────────────────
+
+ENGLISH SUMMARY (for information only; the Spanish text above prevails)
+
+Facturas demo is a learning kit by NARSIL Intelligence, © 2026 NARSIL Intelligence, all
+rights reserved. It is free to download, run, study and modify for learning, personally or
+within your organisation, and you may build your own projects with the techniques it teaches
+and show what you learned, citing the kit. You may NOT sell or commercialise it or modified
+versions, charge for training or services based on it, redistribute it outside the official
+repository, integrate it into products or services for third parties, or remove its notices.
+All data in the kit is fictitious. Third-party components keep their own licenses. The kit
+is provided "AS IS", without warranty of any kind. Breach terminates the license. Spanish
+law applies.

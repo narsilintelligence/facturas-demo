@@ -1,0 +1,4 @@
+.venv/
+salida/
+__pycache__/
+.env
