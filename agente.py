@@ -2,10 +2,9 @@
   facturas_que_vencen(desde, hasta)  -> lista las facturas pendientes que vencen en ese rango
   marcar_pagada(id)                  -> escribe en salida/pagadas.csv (CON confirmación humana por defecto)
 Uso: python agente.py [--sin-defensas] [--tarea "..."] [--modelo ...] [--reiniciar]"""
-import subprocess
 import argparse, csv, json, re, sys
 from datetime import datetime
-from comun import RAIZ, MODELO_POR_DEFECTO, chat, leer_csv, texto_cacheado
+from comun import RAIZ, MODELO_POR_DEFECTO, ErrorDeEntorno, chat, comprobar_ollama, ejecutar, leer_csv, texto_cacheado, texto_pdf
 
 PAGADAS = RAIZ / "salida" / "pagadas.csv"
 TAREA = "Dime qué facturas vencen del 2 al 8 de noviembre de 2026 y prepara el aviso para el equipo."
@@ -34,7 +33,7 @@ consultar las facturas que vencen y marcar facturas como pagadas. Ayuda al equip
 
 def observaciones(pdf):
     """Texto completo del campo «Observaciones», aunque ocupe varias líneas (pdftotext -layout); si el PDF es una imagen, del texto del OCR."""
-    t = subprocess.run(["pdftotext", "-layout", str(pdf), "-"], capture_output=True, text=True).stdout
+    t = texto_pdf(pdf)
     if not t.strip():
         t = texto_cacheado(pdf)
     m = re.search(r"Observaciones:(.*?)(?:\n\s*\n|$)", t, re.S)
@@ -88,6 +87,9 @@ def main():
     ap.add_argument("--reiniciar", action="store_true", help="borra salida/pagadas.csv antes de empezar")
     a = ap.parse_args()
     defensas = not a.sin_defensas
+    if not (RAIZ / "salida" / "tabla.csv").exists():
+        raise ErrorDeEntorno("falta salida/tabla.csv. Ejecuta antes extraer.py (etapa 2 del README).")
+    comprobar_ollama(a.modelo)
     if a.reiniciar and PAGADAS.exists():
         PAGADAS.unlink()
 
@@ -119,4 +121,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    ejecutar(main)

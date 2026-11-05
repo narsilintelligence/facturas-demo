@@ -2,7 +2,8 @@
 Uso: python preguntar.py "¿cuánto le pagamos a Suministros Ejemplo en marzo?" [--modelo ...] [--k 10]
 Necesita haber ejecutado antes extraer.py (usa salida/tabla.csv y salida/texto/)."""
 import argparse, hashlib, json, math
-from comun import RAIZ, MODELO_POR_DEFECTO, chat, embeddings, leer_csv, importes_en, texto_cacheado
+from comun import (RAIZ, MODELO_POR_DEFECTO, MODELO_EMBEDDINGS, ErrorDeEntorno, chat, comprobar_ollama, ejecutar, embeddings,
+                   leer_csv, importes_en, texto_cacheado)
 
 ESQUEMA = {"type": "object", "required": ["respuesta", "citas"], "properties": {
     "respuesta": {"type": "string"},
@@ -66,6 +67,9 @@ def main():
     ap.add_argument("--modelo", default=MODELO_POR_DEFECTO)
     ap.add_argument("--k", type=int, default=10, help="cuántas facturas se recuperan")
     a = ap.parse_args()
+    if not (RAIZ / "salida" / "tabla.csv").exists():
+        raise ErrorDeEntorno("falta salida/tabla.csv. Ejecuta antes extraer.py (etapa 2 del README).")
+    comprobar_ollama(a.modelo, MODELO_EMBEDDINGS)
 
     frags = fragmentos()
     vectores = indice(frags)
@@ -91,4 +95,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    ejecutar(main)

@@ -17,7 +17,7 @@
 </p>
 
 > **Un desarrollo de NARSIL Intelligence.** Este kit es el proyecto de ejemplo del vídeo
-> «Roadmap para aprender IA» ([ENLACE AL VÍDEO]). Lo ofrecemos completo y sin coste para que
+> [«Aprende IA construyendo: de 100 facturas a tu primer agente»](https://youtu.be/a_-YgT1wahY). Lo ofrecemos completo y sin coste para que
 > cualquiera pueda repetir lo que se ve en pantalla y aprender tocando el código. Más sobre lo que
 > hacemos en [narsilintelligence.com](https://narsilintelligence.com).
 
@@ -26,6 +26,7 @@
   &nbsp;·&nbsp; <a href="#las-etapas">Las etapas</a>
   &nbsp;·&nbsp; <a href="#el-kit">El kit</a>
   &nbsp;·&nbsp; <a href="#qué-hay-en-cada-fichero">Ficheros</a>
+  &nbsp;·&nbsp; <a href="#si-algo-falla">Si algo falla</a>
   &nbsp;·&nbsp; <a href="https://narsilintelligence.com">narsilintelligence.com</a>
 </p>
 
@@ -52,7 +53,8 @@ observaciones de las cien facturas están **inventados**. Cualquier parecido con
 
 - **Python 3.10 o superior.**
 - **poppler**, para leer y convertir los PDF (`pdftotext` y `pdftoppm`). En Debian/Ubuntu: `sudo apt install poppler-utils`.
-- **[Ollama](https://ollama.com)** en marcha (por defecto en `http://localhost:11434`) con estos modelos descargados:
+- **[Ollama](https://ollama.com)** en marcha (por defecto en `http://localhost:11434`; probado con la versión 0.33.3) con estos
+  modelos descargados:
 
 ```bash
 ollama pull qwen3.6:35b-a3b       # modelo principal: extracción, preguntas y agente
@@ -199,7 +201,7 @@ la **plantilla del banco de veinte casos**, las **cuatro defensas** y el **plan 
 | `preguntar.py` | Responde preguntas con las facturas recuperadas por embeddings, citando cada una, y comprueba cada cita contra el PDF. |
 | `agente.py` | Agente con dos herramientas (`facturas_que_vencen`, `marcar_pagada`), con y sin defensas contra instrucciones escondidas. |
 | `banco.py` | Banco de pruebas: 20 facturas fijas (`banco.txt`) contra `verdad.csv`, con cuatro números por modelo. |
-| `comun.py` | Utilidades compartidas: llamadas a Ollama, lectura de PDF, OCR y configuración por variables de entorno. |
+| `comun.py` | Utilidades compartidas: llamadas a Ollama con reintentos, comprobaciones al arrancar, lectura de PDF, OCR y configuración por variables de entorno. |
 | `banco.txt` | Identificadores de las 20 facturas del banco de pruebas. |
 | `facturas/` | Las 100 facturas ficticias en PDF. |
 | `verdad.csv` | La respuesta correcta de cada factura. |
@@ -207,10 +209,44 @@ la **plantilla del banco de veinte casos**, las **cuatro defensas** y el **plan 
 | `kit/` | Hoja de tareas, plantilla del banco de veinte casos, las cuatro defensas y el plan de noventa días. |
 | `docs/img/` | Imágenes de este README. |
 
+## Si algo falla
+
+Antes de empezar, cada script comprueba que Ollama responde y que tiene los modelos que va a usar. Si algo falta, se
+para y te dice qué hacer, sin trazas de Python:
+
+- **No hay respuesta de Ollama.** Arráncalo (abre la aplicación o ejecuta `ollama serve`) o, si está en otra máquina o en
+  otro puerto, indícalo con `OLLAMA_HOST`.
+- **Falta un modelo.** El mensaje trae el `ollama pull` exacto que lo descarga.
+- **Falta `pdftotext` o `pdftoppm`.** Instala poppler (mira los requisitos).
+- **Falta `salida/tabla.csv`.** `preguntar.py` y `agente.py` trabajan sobre la tabla de la etapa 2: lanza antes `extraer.py`.
+
+### «CUDA error: an illegal memory access was encountered»
+
+Si Ollama devuelve este error, no has hecho nada mal: es un fallo de Ollama con algunas GPU NVIDIA recientes. Lo hemos
+visto con Ollama 0.33.3 y una NVIDIA GB10 (Grace Blackwell): el modelo se cae con ciertos tamaños exactos de texto, recién
+cargado, así que la misma factura falla siempre igual y las demás salen bien. Está documentado en los issues
+[#17434](https://github.com/ollama/ollama/issues/17434) y [#17596](https://github.com/ollama/ollama/issues/17596) de
+Ollama, abiertos y sin arreglo en noviembre de 2026.
+
+El kit lo esquiva solo. Cuando Ollama falla, `comun.py` repite la petición cambiando su forma, no lo que se pide: primero
+con otro tamaño de lote (`num_batch` 512, que en nuestras pruebas basta) y, si hace falta, con unos tokens más al final
+del mensaje. Cuando una variante funciona, la mantiene para el resto de la ejecución. En pantalla lo verás así:
+
+```text
+   (Ollama ha fallado: CUDA error: an illegal memory access was encountered. Reintento 1 de 3, con lote de 512)
+   (funciona: sigo con lote de 512 para el resto de peticiones a qwen3.6:35b-a3b)
+```
+
+Si ninguna variante funciona, esa factura queda en `salida/revisar.csv` con el motivo «sin respuesta del modelo» y la
+extracción sigue con las demás. Si fallan tres seguidas, el problema ya no es de una factura: el script se para y lo dice.
+
+Si te pasa a menudo, actualiza Ollama cuando salga una versión que lo corrija. En esos issues cuentan que también se evita
+arrancando Ollama con la variable `OLLAMA_FLASH_ATTENTION=0`; eso no lo hemos medido nosotros.
+
 ## Notas
 
 - El razonamiento interno del modelo va apagado (`think: false`) y la temperatura a 0, para que sea rápido y repetible.
-- Ollama local puede dar algún error 500 suelto; `comun.py` reintenta hasta 4 veces.
+- Si Ollama falla, `comun.py` reintenta con otras variantes de la petición (mira «Si algo falla»).
 - Todo se ejecuta en local: no se envía ninguna factura a internet.
 
 ## Contacto

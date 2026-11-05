@@ -2,7 +2,8 @@
 Uso: python extraer.py [--modelo qwen3.6:35b-a3b] [--limite N] [--ids F-0001,F-0004]"""
 import argparse, csv, datetime as dt, json, time
 from pathlib import Path
-from comun import RAIZ, MODELO_POR_DEFECTO, chat, leer_texto
+from comun import (RAIZ, MODELO_POR_DEFECTO, MODELO_OCR, ErrorDeEntorno, FalloDelModelo, chat, comprobar_ollama,
+                   ejecutar, leer_texto)
 
 CAMPOS = ["proveedor", "fecha", "vencimiento", "base", "tipo_iva", "iva", "total"]
 ESQUEMA = {  # el modelo está obligado a devolver exactamente esta forma; null = "no lo encuentro"
@@ -80,14 +81,30 @@ def main():
         ficheros = [f for f in ficheros if f.stem in a.ids.split(",")]
     if a.limite:
         ficheros = ficheros[: a.limite]
+    comprobar_ollama(a.modelo, MODELO_OCR)
     salida = RAIZ / "salida"
     (salida / "texto").mkdir(parents=True, exist_ok=True)
     print(f"Modelo: {a.modelo}  |  facturas: {len(ficheros)}\n")
 
-    ok, revisar, tin, tout, t_total = [], [], 0, 0, 0.0
+    ok, revisar, sin_respuesta, tin, tout, t_total, seguidas = [], [], [], 0, 0, 0.0, 0
     with open(salida / "registro.jsonl", "w", encoding="utf-8") as reg:
         for f in ficheros:
-            campos, ti, to, seg, esc, texto = extraer_factura(a.modelo, f)
+            t0 = time.time()
+            try:
+                campos, ti, to, seg, esc, texto = extraer_factura(a.modelo, f)
+            except FalloDelModelo as e:   # el modelo no responde con ESTA factura: se apunta para revisar y se sigue
+                seg = time.time() - t0
+                sin_respuesta.append(f.stem)
+                revisar.append({"id": f.stem, "fichero": f.name, **{k: None for k in CAMPOS}, "motivo": f"sin respuesta del modelo: {e}"})
+                reg.write(json.dumps({"id": f.stem, "modelo": a.modelo, "tokens_in": 0, "tokens_out": 0, "segundos": round(seg, 2),
+                                      "escaneada": None, "estado": "sin respuesta", "motivos": [str(e)]}, ensure_ascii=False) + "\n")
+                t_total += seg
+                print(f"[FALLO  ] {f.stem}  {e}\n           -> queda en salida/revisar.csv; sigo con las demás")
+                seguidas += 1
+                if seguidas == 3:   # tres seguidas: el problema ya no es de una factura, es de Ollama
+                    break
+                continue
+            seguidas = 0
             (salida / "texto" / f"{f.stem}.txt").write_text(texto)
             motivos = validar(campos)
             c = campos if isinstance(campos, dict) else {}
@@ -107,10 +124,18 @@ def main():
             w.writeheader(); w.writerows(filas)
     escribir("tabla.csv", ok)
     escribir("revisar.csv", revisar, ["motivo"])
-    print(f"\nResumen: procesadas {len(ficheros)} | correctas {len(ok)} | a revisar {len(revisar)}")
-    print(f"Tokens: {tin} de entrada + {tout} de salida = {tin + tout} | tiempo {t_total:.0f} s ({t_total / max(len(ficheros), 1):.1f} s por factura)")
+    hechas = len(ok) + len(revisar)
+    print(f"\nResumen: procesadas {hechas} | correctas {len(ok)} | a revisar {len(revisar)}"
+          + (f" (sin respuesta del modelo: {', '.join(sin_respuesta)})" if sin_respuesta else ""))
+    print(f"Tokens: {tin} de entrada + {tout} de salida = {tin + tout} | tiempo {t_total:.0f} s ({t_total / max(hechas, 1):.1f} s por factura)")
     print(f"Escrito: salida/tabla.csv, salida/revisar.csv, salida/registro.jsonl")
+    if hechas < len(ficheros):
+        raise ErrorDeEntorno(f"tres facturas seguidas sin respuesta del modelo, así que he parado en {sin_respuesta[-1]}: el problema "
+                             "parece de Ollama, no de las facturas. Mira «Si algo falla» en el README.")
+    if sin_respuesta:
+        print("Las facturas sin respuesta están en salida/revisar.csv. Para reintentarlas, vuelve a lanzar extraer.py; "
+              "si siguen fallando, mira «Si algo falla» en el README.")
 
 
 if __name__ == "__main__":
-    main()
+    ejecutar(main)

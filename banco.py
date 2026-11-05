@@ -2,7 +2,7 @@
 Cuatro números por modelo: acierto por campo, invención, coste en tokens por caso y segundos por caso.
 Uso: python banco.py [--modelos qwen3.6:35b-a3b,qwen3.8:27b]"""
 import argparse, datetime as dt
-from comun import RAIZ, MODELO_POR_DEFECTO, leer_csv, importes_en
+from comun import RAIZ, MODELO_POR_DEFECTO, MODELO_OCR, ErrorDeEntorno, FalloDelModelo, comprobar_ollama, ejecutar, leer_csv, importes_en
 from extraer import extraer_factura, CAMPOS
 
 MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
@@ -39,11 +39,20 @@ def esta_en_texto(campo, dado, texto):
 
 def evaluar(modelo, ids, verdad):
     aciertos = {c: 0 for c in CAMPOS}
-    inventados = tokens = 0
+    inventados = tokens = sin_respuesta = seguidas = 0
     segundos = 0.0
     fallos = []
     for n, i in enumerate(ids, 1):
-        campos, ti, to, seg, esc, texto = extraer_factura(modelo, RAIZ / "facturas" / f"{i}.pdf")
+        try:
+            campos, ti, to, seg, esc, texto = extraer_factura(modelo, RAIZ / "facturas" / f"{i}.pdf")
+        except FalloDelModelo as e:   # sin respuesta: cuenta como fallo en todos los campos y se sigue con el siguiente caso
+            sin_respuesta += 1; seguidas += 1
+            print(f"  [{n:>2}/{len(ids)}] {i}: SIN RESPUESTA del modelo, cuenta como fallo en los {len(CAMPOS)} campos ({e})")
+            if seguidas == 3:
+                raise ErrorDeEntorno(f"tres casos seguidos sin respuesta de {modelo}: el problema parece de Ollama, no del banco. "
+                                     "Mira «Si algo falla» en el README.")
+            continue
+        seguidas = 0
         campos = campos or {}
         tokens += ti + to
         segundos += seg
@@ -61,15 +70,17 @@ def evaluar(modelo, ids, verdad):
         for m in malos:
             print(f"        - {m}")
         fallos += malos
-    n = len(ids)
+    n, respondidos = len(ids), max(len(ids) - sin_respuesta, 1)   # coste y tiempo, sobre los casos que tuvieron respuesta
     return {"modelo": modelo, "acierto": {c: 100 * aciertos[c] / n for c in CAMPOS}, "inventados": inventados,
-            "campos_total": n * len(CAMPOS), "tokens_caso": tokens / n, "seg_caso": segundos / n}
+            "campos_total": n * len(CAMPOS), "tokens_caso": tokens / respondidos, "seg_caso": segundos / respondidos,
+            "sin_respuesta": sin_respuesta}
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--modelos", default=MODELO_POR_DEFECTO, help="uno o dos modelos separados por comas")
     a = ap.parse_args()
+    comprobar_ollama(*a.modelos.split(","), MODELO_OCR)
     ids = [l.strip() for l in (RAIZ / "banco.txt").read_text().split() if l.strip()]
     verdad = {f["id"]: f for f in leer_csv(RAIZ / "verdad.csv")}
     resultados = []
@@ -87,7 +98,11 @@ def main():
     print(f"{'modelo':<20}{'invención':>22}{'tokens/caso':>14}{'seg/caso':>11}")
     for r in resultados:
         print(f"{r['modelo']:<20}{str(r['inventados']) + ' de ' + str(r['campos_total']):>22}{r['tokens_caso']:>14.0f}{r['seg_caso']:>11.1f}")
+    for r in resultados:
+        if r["sin_respuesta"]:
+            print(f"\nAviso: {r['modelo']} no respondió en {r['sin_respuesta']} caso(s); cuentan como fallo en el acierto y no entran "
+                  "en tokens ni segundos. Mira «Si algo falla» en el README.")
 
 
 if __name__ == "__main__":
-    main()
+    ejecutar(main)
